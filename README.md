@@ -25,7 +25,7 @@ Add the accessory in `config.json` in your home directory inside `.homebridge`.
 ```js
    {
       "accessory": "BlindsCMD",
-      "name": "Window",
+      "name": "Downstairs Window Blinds",
       "up_cmd": "/path/to/your/raise_blinds_script",
       "down_cmd": "/path/to/your/lower_blinds_script",
     }

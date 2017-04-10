@@ -65,7 +65,7 @@ BlindsCMDAccessory.prototype.getTargetPosition = function(callback) {
 BlindsCMDAccessory.prototype.setTargetPosition = function(pos, callback) {
     this.log("Set TargetPosition: %s", pos);
     this.currentTargetPosition = pos;
-    const moveUp = (this.currentTargetPosition >= this.lastPosition);
+    const moveUp = ((this.currentTargetPosition != 0) && (this.currentTargetPosition >= this.lastPosition));
     this.log((moveUp ? "Moving up" : "Moving down"));
 
     this.service

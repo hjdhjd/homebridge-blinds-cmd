@@ -1,8 +1,8 @@
-# homebridge-blinds
+# homebridge-blinds-cmd
 
-`homebridge-blinds` is a plugin for Homebridge.
+`homebridge-blinds-cmd` is a plugin for Homebridge that allows you to open or close your window blinds by executing a given command line.
 
-Control your `http`-based blinds via Homebridge!
+Control your blinds via Homebridge by executing specific command lines for opening or closing.
 
 ## Installation
 
@@ -13,9 +13,9 @@ Install homebridge:
 ```sh
 sudo npm install -g homebridge
 ```
-Install homebridge-blinds:
+Install homebridge-blinds-cmd:
 ```sh
-sudo npm install -g homebridge-blinds
+sudo npm install -g homebridge-blinds-cmd
 ```
 
 ## Configuration
@@ -24,19 +24,15 @@ Add the accessory in `config.json` in your home directory inside `.homebridge`.
 
 ```js
    {
-      "accessory": "BlindsHTTP",
+      "accessory": "BlindsCMD",
       "name": "Window",
-      "up_url": "http://1.2.3.4/window/up",
-      "down_url": "http://1.2.3.4/window/down",
-      "http_method": "PUT"
+      "up_cmd": "/path/to/your/raise_blinds_script",
+      "down_cmd": "/path/to/your/lower_blinds_script",
     }
 ```
 
-You can omit `http_method`, it defaults to `POST`.
-
 ## Note
-Currently the plugin only emulates the position (it saves it in a variable), because my blinds only support
-up and down via urls.
+This plugin doesn't query nor have direct knowledge of the actual position of your blinds. Instead, it emulates the position based on your most recent request to raise / lower the blinds (i.e. it remembers what you last asked it to do and reports that back to HomeKit). Some blinds, such as Somfy, don't support querying their specific state.
 
-Feel free to contribute to make this a better plugin!
+This script is based on Robin Temme's excellent homebridge-blinds plugin, and I have merely adapted and updated it to support executing a script instead of calling URLs for opening and closing blinds. Feel free to contribute to make this a better plugin!
 

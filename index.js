@@ -1,22 +1,22 @@
 var request = require("request");
+var exec = require("child_process").exec;
 var Service, Characteristic;
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
 
-    homebridge.registerAccessory("homebridge-blinds", "BlindsHTTP", BlindsHTTPAccessory);
+    homebridge.registerAccessory("homebridge-blinds", "BlindsCMD", BlindsCMDAccessory);
 }
 
-function BlindsHTTPAccessory(log, config) {
+function BlindsCMDAccessory(log, config) {
     // global vars
     this.log = log;
 
     // configuration vars
     this.name = config["name"];
-    this.upURL = config["up_url"];
-    this.downURL = config["down_url"];
-    this.httpMethod = config["http_method"] || "POST";
+    this.upCMD = config["up_cmd"];
+    this.downCMD = config["down_cmd"];
 
     // state vars
     this.lastPosition = 0; // last known position of the blinds, down by default
@@ -47,22 +47,22 @@ function BlindsHTTPAccessory(log, config) {
         .on('set', this.setTargetPosition.bind(this));
 }
 
-BlindsHTTPAccessory.prototype.getCurrentPosition = function(callback) {
+BlindsCMDAccessory.prototype.getCurrentPosition = function(callback) {
     this.log("Requested CurrentPosition: %s", this.lastPosition);
     callback(null, this.lastPosition);
 }
 
-BlindsHTTPAccessory.prototype.getPositionState = function(callback) {
+BlindsCMDAccessory.prototype.getPositionState = function(callback) {
     this.log("Requested PositionState: %s", this.currentPositionState);
     callback(null, this.currentPositionState);
 }
 
-BlindsHTTPAccessory.prototype.getTargetPosition = function(callback) {
+BlindsCMDAccessory.prototype.getTargetPosition = function(callback) {
     this.log("Requested TargetPosition: %s", this.currentTargetPosition);
     callback(null, this.currentTargetPosition);
 }
 
-BlindsHTTPAccessory.prototype.setTargetPosition = function(pos, callback) {
+BlindsCMDAccessory.prototype.setTargetPosition = function(pos, callback) {
     this.log("Set TargetPosition: %s", pos);
     this.currentTargetPosition = pos;
     const moveUp = (this.currentTargetPosition >= this.lastPosition);
@@ -71,32 +71,32 @@ BlindsHTTPAccessory.prototype.setTargetPosition = function(pos, callback) {
     this.service
         .setCharacteristic(Characteristic.PositionState, (moveUp ? 1 : 0));
 
-    this.httpRequest((moveUp ? this.upURL : this.downURL), this.httpMethod, function() {
-        this.log("Success moving %s", (moveUp ? "up (to 100)" : "down (to 0)"))
-        this.service
-            .setCharacteristic(Characteristic.CurrentPosition, (moveUp ? 100 : 0));
-        this.service
-            .setCharacteristic(Characteristic.PositionState, 2);
-        this.lastPosition = (moveUp ? 100 : 0);
+    this.cmdRequest((moveUp ? this.upCMD : this.downCMD), function(error, stdout, stderr) {
+      if (error) {
+	this.log('power function failed: %s', stderr);
+	callback(error);
+      } else {
+      	this.log("Success moving %s", (moveUp ? "up (to 100)" : "down (to 0)"))
 
-        callback(null);
+	this.service
+           .setCharacteristic(Characteristic.CurrentPosition, (moveUp ? 100 : 0));
+	this.service
+           .setCharacteristic(Characteristic.PositionState, 2);
+	this.lastPosition = (moveUp ? 100 : 0);
+
+	this.log('power function succeeded!');
+	callback(null);
+	this.log(stdout);
+      }
     }.bind(this));
 }
 
-BlindsHTTPAccessory.prototype.httpRequest = function(url, method, callback) {
-  request({
-    method: method,
-    url: url,
-  }, function(err, response, body) {
-    if (!err && response.statusCode == 200) {
-      callback(null);
-    } else {
-      this.log("Error getting state (status code %s): %s", response.statusCode, err);
-      callback(err);
-    }
-  }.bind(this));
+BlindsCMDAccessory.prototype.cmdRequest = function(cmd, callback) {
+  exec(cmd, function(error, stdout, stderr) {
+    callback(error, stdout, stderr)
+  });
 }
 
-BlindsHTTPAccessory.prototype.getServices = function() {
+BlindsCMDAccessory.prototype.getServices = function() {
   return [this.service];
 }

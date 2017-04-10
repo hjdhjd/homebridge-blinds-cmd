@@ -1,7 +1,7 @@
 {
-  "name": "homebridge-blinds",
+  "name": "homebridge-blinds-cmd",
   "version": "1.0.0",
-  "description": "A homebridge plugin to control my blinds",
+  "description": "A homebridge plugin to control window blinds using command line scripts",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,9 +16,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zwerch/homebridge-blinds.git"
+    "url": "git+https://github.com/hjdhjd/homebridge-blinds-cmd.git"
   },
-  "author": "Robin Temme <zwerch1337@googlemail.com>",
+  "author": "HJD",
   "license": "ISC",
   "dependencies": {
     "request": "^2.74.0"

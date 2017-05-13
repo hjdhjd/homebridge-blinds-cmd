@@ -25,6 +25,9 @@ Add the accessory in `config.json` in your home directory inside `.homebridge`.
 ```js
    {
       "accessory": "BlindsCMD",
+      "manufacturer": "Somfy",
+      "model": "Sonesse",
+      "serial": "1234",
       "name": "Downstairs Window Blinds",
       "up_cmd": "/path/to/your/raise_blinds_script",
       "down_cmd": "/path/to/your/lower_blinds_script",

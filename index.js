@@ -13,6 +13,11 @@ function BlindsCMDAccessory(log, config) {
     // global vars
     this.log = log;
 
+    // serial and manufacturer info
+    this.serial = config["serial"] || "Default-SerialNumber";
+    this.model = config["model"] || "Default-Model";
+    this.manufacturer = config["manufacturer"] || "Default-Manufacturer";
+
     // configuration vars
     this.name = config["name"];
     this.upCMD = config["up_cmd"];
@@ -98,5 +103,12 @@ BlindsCMDAccessory.prototype.cmdRequest = function(cmd, callback) {
 }
 
 BlindsCMDAccessory.prototype.getServices = function() {
-  return [this.service];
+  var informationService = new Service.AccessoryInformation();
+  
+  informationService
+    .setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
+    .setCharacteristic(Characteristic.Model, this.model)
+    .setCharacteristic(Characteristic.SerialNumber, this.serial);
+   
+  return [this.service, informationService];
 }

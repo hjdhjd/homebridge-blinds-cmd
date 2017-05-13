@@ -31,6 +31,7 @@ Add the accessory in `config.json` in your home directory inside `.homebridge`.
       "name": "Downstairs Window Blinds",
       "up_cmd": "/path/to/your/raise_blinds_script",
       "down_cmd": "/path/to/your/lower_blinds_script",
+      "status_cmd": "/path/to/your/blinds_status_script",
     }
 ```
 

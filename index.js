@@ -1,6 +1,7 @@
 var request = require("request");
 var exec = require("child_process").exec;
 var Service, Characteristic;
+var BlindsCMDDebug = 0;
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
@@ -22,6 +23,7 @@ function BlindsCMDAccessory(log, config) {
     this.name = config["name"];
     this.upCMD = config["up_cmd"];
     this.downCMD = config["down_cmd"];
+    this.stateCMD = config["state_cmd"];
 
     // state vars
     this.lastPosition = 0; // last known position of the blinds, down by default
@@ -53,50 +55,75 @@ function BlindsCMDAccessory(log, config) {
 }
 
 BlindsCMDAccessory.prototype.getCurrentPosition = function(callback) {
-    this.log("Requested CurrentPosition: %s", this.lastPosition);
-    callback(null, this.lastPosition);
-}
-
-BlindsCMDAccessory.prototype.getPositionState = function(callback) {
-    this.log("Requested PositionState: %s", this.currentPositionState);
-    callback(null, this.currentPositionState);
-}
-
-BlindsCMDAccessory.prototype.getTargetPosition = function(callback) {
-    this.log("Requested TargetPosition: %s", this.currentTargetPosition);
-    callback(null, this.currentTargetPosition);
-}
-
-BlindsCMDAccessory.prototype.setTargetPosition = function(pos, callback) {
-    this.log("Set TargetPosition: %s", pos);
-    this.currentTargetPosition = pos;
-    const moveUp = ((this.currentTargetPosition != 0) && (this.currentTargetPosition >= this.lastPosition));
-    this.log((moveUp ? "Moving up" : "Moving down"));
-
-    this.service
-        .setCharacteristic(Characteristic.PositionState, (moveUp ? 1 : 0));
-
-    this.cmdRequest((moveUp ? this.upCMD : this.downCMD), function(error, stdout, stderr) {
+    this.lastState(function(error, lPos) {
       if (error) {
-	this.log('power function failed: %s', stderr);
-	callback(error);
+        this.log('Unable to retrieve current position');
+        callback(error);
       } else {
-      	this.log("Success moving %s", (moveUp ? "up (to 100)" : "down (to 0)"))
-
-	this.service
-           .setCharacteristic(Characteristic.CurrentPosition, (moveUp ? 100 : 0));
-	this.service
-           .setCharacteristic(Characteristic.PositionState, 2);
-	this.lastPosition = (moveUp ? 100 : 0);
-
-	this.log('power function succeeded!');
-	callback(null);
-	this.log(stdout);
+        if (BlindsCMDDebug) this.log("Requested CurrentPosition: %s", lPos);
+        callback(null, lPos);
       }
     }.bind(this));
 }
 
-BlindsCMDAccessory.prototype.cmdRequest = function(cmd, callback) {
+BlindsCMDAccessory.prototype.getPositionState = function(callback) {
+    if (BlindsCMDDebug) this.log("Requested PositionState: %s", this.currentPositionState);
+    callback(null, this.currentPositionState);
+}
+
+BlindsCMDAccessory.prototype.getTargetPosition = function(callback) {
+    if (BlindsCMDDebug) this.log("Requested TargetPosition: %s", this.currentTargetPosition);
+    callback(null, this.currentTargetPosition);
+}
+
+BlindsCMDAccessory.prototype.setTargetPosition = function(pos, callback) {
+    if (BlindsCMDDebug) this.log("Set TargetPosition: %s", pos);
+    this.currentTargetPosition = pos;
+
+    this.lastState(function(error, lPos) {
+      if (error) {
+        this.log('Unable to query current position');
+        callback(error);
+      } else {
+        const moveUp = ((this.currentTargetPosition != 0) && (this.currentTargetPosition >= lPos));
+        this.log((moveUp ? "Moving up" : "Moving down"));
+
+        this.cmdRequest(moveUp, (moveUp ? this.upCMD : this.downCMD), function(error, stdout, stderr) {
+          if (error) {
+    	    this.log('Move function failed: %s', stderr);
+	    callback(error);
+          } else {
+      	    this.log("Success moving %s", (moveUp ? "up (to 100)" : "down (to 0)"))
+
+	    this.lastPosition = (moveUp ? 100 : 0);
+
+	    if (BlindsCMDDebug) this.log('Move function succeeded.');
+	    callback(null);
+	    if (BlindsCMDDebug) this.log('Move command output: ' + stdout);
+          }
+            this.currentPositionState = 2;
+            this.service
+              .setCharacteristic(Characteristic.PositionState, 2);
+        }.bind(this));
+      }
+    }.bind(this));
+}
+
+BlindsCMDAccessory.prototype.lastState = function(callback) {
+  if(this.stateCMD) {
+    exec(this.stateCMD, function(error, stdout, stderr) {
+      callback(error, parseInt(stdout));
+    });
+  } else {
+    callback(error, this.lastPosition);
+  }
+}
+
+BlindsCMDAccessory.prototype.cmdRequest = function(moveUp, cmd, callback) {
+  this.currentPositionState = (moveUp ? 1 : 0);
+  this.service
+    .setCharacteristic(Characteristic.PositionState, (moveUp ? 1 : 0));
+
   exec(cmd, function(error, stdout, stderr) {
     callback(error, stdout, stderr)
   });

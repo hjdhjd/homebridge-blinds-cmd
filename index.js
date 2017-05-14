@@ -1,7 +1,7 @@
 var request = require("request");
 var exec = require("child_process").exec;
 var Service, Characteristic;
-var BlindsCMDDebug = 0;
+var BlindsCMDDebug = 1;
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
@@ -27,11 +27,30 @@ function BlindsCMDAccessory(log, config) {
 
     // state vars
     this.lastPosition = 0; // last known position of the blinds, down by default
-    this.currentPositionState = 2; // stopped by default
+    this.currentPositionState = Characteristic.PositionState.STOPPED; // stopped by default
     this.currentTargetPosition = 0; // down by default
 
     // register the service and provide the functions
     this.service = new Service.WindowCovering(this.name);
+
+    // initialize the current window state.
+   this.service
+       .setCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
+
+   // initialize the current position based on external status information, if available.
+   if(this.stateCMD) {
+     this.lastState(function(error, lPos) {
+       if (error) {
+         this.log('Unable to initialize query current position');
+       } else {
+         this.service
+             .setCharacteristic(Characteristic.CurrentPosition, lPos);
+         this.service
+             .setCharacteristic(Characteristic.TargetPosition, lPos);
+         this.lastPosition = lPos;
+       }
+     }.bind(this));
+   }
 
     // the current position (0-100%)
     // https://github.com/KhaosT/HAP-NodeJS/blob/master/lib/gen/HomeKitTypes.js#L493
@@ -52,6 +71,7 @@ function BlindsCMDAccessory(log, config) {
         .getCharacteristic(Characteristic.TargetPosition)
         .on('get', this.getTargetPosition.bind(this))
         .on('set', this.setTargetPosition.bind(this));
+
 }
 
 BlindsCMDAccessory.prototype.getCurrentPosition = function(callback) {
@@ -101,9 +121,9 @@ BlindsCMDAccessory.prototype.setTargetPosition = function(pos, callback) {
 	    callback(null);
 	    if (BlindsCMDDebug) this.log('Move command output: ' + stdout);
           }
-            this.currentPositionState = 2;
+            this.currentPositionState = Characteristic.PositionState.STOPPED;
             this.service
-              .setCharacteristic(Characteristic.PositionState, 2);
+              .setCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
         }.bind(this));
       }
     }.bind(this));

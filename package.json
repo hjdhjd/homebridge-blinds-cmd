@@ -1,6 +1,6 @@
 {
   "name": "homebridge-blinds-cmd",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A homebridge plugin to control window blinds using command line scripts",
   "main": "index.js",
   "scripts": {

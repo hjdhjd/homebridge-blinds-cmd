@@ -1,7 +1,7 @@
 var request = require("request");
 var exec = require("child_process").exec;
 var Service, Characteristic;
-var BlindsCMDDebug = 1;
+var BlindsCMDDebug = 0;
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;

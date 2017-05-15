@@ -117,13 +117,21 @@ BlindsCMDAccessory.prototype.setTargetPosition = function(pos, callback) {
 
 	    this.lastPosition = (moveUp ? 100 : 0);
 
+	    // set our current position and set our position to stopped.
+            this.service
+                .setCharacteristic(Characteristic.CurrentPosition, this.lastPosition);
+            this.currentPositionState = Characteristic.PositionState.STOPPED;
+            this.service
+                .setCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
+
 	    if (BlindsCMDDebug) this.log('Move function succeeded.');
 	    callback(null);
 	    if (BlindsCMDDebug) this.log('Move command output: ' + stdout);
           }
+	    // just in case.
             this.currentPositionState = Characteristic.PositionState.STOPPED;
             this.service
-              .setCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
+                .setCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
         }.bind(this));
       }
     }.bind(this));
@@ -140,9 +148,9 @@ BlindsCMDAccessory.prototype.lastState = function(callback) {
 }
 
 BlindsCMDAccessory.prototype.cmdRequest = function(moveUp, cmd, callback) {
-  this.currentPositionState = (moveUp ? 1 : 0);
+  this.currentPositionState = (moveUp ? Characteristic.PositionState.INCREASING : Characteristic.PositionState.DECREASING);
   this.service
-    .setCharacteristic(Characteristic.PositionState, (moveUp ? 1 : 0));
+    .setCharacteristic(Characteristic.PositionState, (moveUp ? Characteristic.PositionState.INCREASING : Characteristic.PositionState.DECREASING));
 
   exec(cmd, function(error, stdout, stderr) {
     callback(error, stdout, stderr)

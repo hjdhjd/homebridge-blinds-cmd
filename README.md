@@ -38,5 +38,7 @@ Add the accessory in `config.json` in your home directory inside `.homebridge`.
 ## Note
 This plugin doesn't query nor have direct knowledge of the actual position of your blinds. Instead, it emulates the position based on your most recent request to raise / lower the blinds (i.e. it remembers what you last asked it to do and reports that back to HomeKit). Some blinds, such as Somfy, don't support querying their specific state.
 
+A sample control script for Somfy is included. This script is provided as an example of what is possible. Your mileage may vary - this script was tested on a Mac and should work on other platforms, best of luck. It assumes the use of a [Somfy URTSI](https://www.somfysystems.com/products/1810872/universal-rts-interface) attached to an [iTach Flex](https://www.globalcache.com/products/flex/)) via serial. The script is fairly robust and allows for multiple URTSI scenarios including multiple URTSIs and shade groups.
+
 This script is based on Robin Temme's excellent homebridge-blinds plugin, and I have merely adapted and updated it to support executing a script instead of calling URLs for opening and closing blinds. Feel free to contribute to make this a better plugin!
 

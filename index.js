@@ -143,7 +143,7 @@ BlindsCMDAccessory.prototype.lastState = function(callback) {
       callback(error, parseInt(stdout));
     });
   } else {
-    callback(error, this.lastPosition);
+    callback(null, this.lastPosition);
   }
 }
 

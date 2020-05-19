@@ -1,0 +1,58 @@
+{
+	"pluginAlias": "BlindsCMD",
+	"pluginType": "accessory",
+	"headerDisplay": "homebridge-blinds-cmd is a [Homebridge](https://homebridge.io) plugin that allows you to raise or lower your window blinds by executing a given command line script.",
+	"footerDisplay": "For additional help please see the [developer page](https://github.com/hjdhjd/homebridge-blinds-cmd).",
+	"singular": false,
+	"schema": {
+		"type": "object",
+		"properties": {
+			"name": {
+				"type": "string",
+				"title": "Blind Name",
+                "required": true,
+				"default": "Blinds",
+				"description": "Name you want to assign to the blind you want to control."
+            },
+			"up_cmd": {
+				"type": "string",
+				"title": "Up Command Script",
+                "required": true,
+                "placeholder": "/path/to/your/raise-blinds-script",
+				"description": "Path to the command or script to raise the blind."
+            },
+			"down_cmd": {
+				"type": "string",
+				"title": "Down Command Script",
+                "required": true,
+                "placeholder": "/path/to/your/lower-blinds-script",
+				"description": "Path to the command or script to lower the blind."
+            },
+			"state_cmd": {
+				"type": "string",
+				"title": "State Command Script",
+                "required": true,
+                "placeholder": "/path/to/your/blinds-state-script",
+				"description": "Path to the command or script to show the current state of the blind."
+            },
+			"manufacturer": {
+				"type": "string",
+				"title": "Blind Manufacturer",
+                "required": false,
+				"description": "Manufacturer name of the blind."
+            },
+			"model": {
+				"type": "string",
+				"title": "Blind Model",
+                "required": false,
+				"description": "Model name of the blind."
+            },
+			"serial": {
+				"type": "string",
+				"title": "Blind Serial",
+                "required": false,
+				"description": "Serial number of the blind."
+            }
+		}
+	}
+}

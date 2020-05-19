@@ -1,14 +1,19 @@
 {
   "name": "homebridge-blinds-cmd",
-  "version": "1.0.8",
+  "version": "1.0.9",
+  "displayName": "Homebridge Blinds Command",
   "description": "A homebridge plugin to control window blinds using command line scripts",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
+    "homebridge",
     "homebridge-plugin",
-    "homekit"
+    "homekit",
+    "blinds",
+    "somfy",
+    "shades"
   ],
   "engines": {
     "node": ">4.0.0",

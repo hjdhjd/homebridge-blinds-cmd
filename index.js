@@ -7,7 +7,7 @@ module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
 
-    homebridge.registerAccessory("homebridge-blinds", "BlindsCMD", BlindsCMDAccessory);
+    homebridge.registerAccessory("homebridge-blinds-cmd", "BlindsCMD", BlindsCMDAccessory);
 }
 
 function BlindsCMDAccessory(log, config) {

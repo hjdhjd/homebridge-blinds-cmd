@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ## 3.0.0 (2020-08-07)
   * Completely refactoring and modernization of this plugin.
-  * **Breaking change: I've changed the name of the plugin in config.json. You will need to update your configuration to reflect this or Homebridge may not be able to successfully start. See the README for an example `config.json` block, or use the Homebridge webUI.
+  * **Breaking change: I've changed the name of the plugin in config.json. You will need to update your configuration to reflect this or Homebridge may not be able to successfully start. See the README for an example `config.json` block, or use the Homebridge webUI.**
   * New feature: state polling. Configure the plugin to periodically poll for status updates to ensure the status in HomeKit is always correct. This is especially useful when blinds might be independently be controlled outside of the plugin, and the true state isn't updated.
   * New feature: simulated delays. By default, `homebridge-blinds-cmd` will immediately execute and complete all state changes and update HomKit. In reality, there's usually a significant amount of time between starting an open or a close event, and the blinds completing the open or close action. This feature attempts to simulate the time it takes to complete an open or a close and correctly reflect that in HomeKit.
   * New feature: position reporting. You can have the status script return the position state as a number and it will be reflected in HomeKit.

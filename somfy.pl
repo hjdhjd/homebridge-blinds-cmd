@@ -17,10 +17,10 @@
 #   8 - Shade or Shade Group H
 #
 # Example commands for your Homebridge config.json with homebridge-blinds-cmd:
-# 
-#   "up_cmd": "~/path/to/somfy.pl 3 up repeat",
-#   "down_cmd": "~/path/to/somfy.pl 3 down repeat",
-#   "state_cmd": "~/path/to/somfy.pl 3 status"
+#
+#   "up": "~/path/to/somfy.pl 3 up repeat",
+#   "down": "~/path/to/somfy.pl 3 down repeat",
+#   "state": "~/path/to/somfy.pl 3 status"
 #
 
 use strict;
@@ -47,7 +47,7 @@ my $LOCK = $Bin . '/somfy.lock';
 # ensures we repeat the intended instruction a few times for good measure.
 #
 my $REPEATCOUNT = 5;
-my $USAGE = "Usage: $0 <channel> <up | down | stop | status> [repeat]\n";
+my $USAGE = "Usage: $0 <channel> <up | down | stop | status> [repeat] [position]\n";
 
 # If you have multiple URTSIs in a home, for signal coverage reasons for instance, you can assign
 # the individual channels to specific URTSIs. Otherwise, this should be the IP address of your
@@ -96,19 +96,30 @@ $DIRECTION = 'T' if $DIRECTION =~ /^status$/i;
 
 $DIRECTION =~ /^[UDST]$/ or die $USAGE;
 
-# See if we need to repeat this command a few times to ensure the signal gets through.
+# See if we need to repeat this command a few times to ensure the signal gets through, or if
+# we specified the position we want to move to, or both.
 #
-my $REPEAT = shift;
+my $OPTIONREPEAT = shift;
+my $OPTIONPOSITION = shift;
+my $POSITION;
+my $REPEAT;
 
-if(defined($REPEAT)) {
-  if($REPEAT =~ /^repeat$/i) {
-    $REPEAT = $REPEATCOUNT;
-  } else {
-    die $USAGE;
-  }
-} else {
-  $REPEAT = 1;
+if(defined($OPTIONREPEAT)) {
+  $REPEAT = $REPEATCOUNT if $OPTIONREPEAT =~ /^repeat$/i;
+  $POSITION = int($OPTIONREPEAT) if $OPTIONREPEAT =~ /^[0-9]+$/;
+
+  die $USAGE unless defined($POSITION) || defined($REPEAT);
 }
+
+# We specified a position, rather than a repeat above.
+$REPEAT = 1 if !defined($REPEAT);
+
+# Explicit position specified - make sure it's a valid value.
+$POSITION = int($OPTIONPOSITION) if(defined($OPTIONPOSITION) && $OPTIONPOSITION =~ /^[0-9]+$/);
+die $USAGE if(defined($OPTIONPOSITION) && !defined($POSITION));
+
+$POSITION = 0 if(defined($POSITION) && ($POSITION < 0));
+$POSITION = 100 if(defined($POSITION) && ($POSITION > 100));
 
 # We need to be careful about concurrency. One signal per Somfy.
 # Don't need to unlock this, as the lock will be released on exit.
@@ -158,30 +169,30 @@ for(; $REPEAT > 0; $REPEAT--) {
   # U/D/S (directional command)
   #
   my $cmd = '01' . sprintf("%02d", $CHANNEL) . "$DIRECTION\r\n";
-  
+
   my $response = $ua->post("http://$SOMFY{$CHANNEL}/api/host/modules/1/ports/1/data", Content => $cmd);
 
   # Receive the response and check to see if there is an issue.
   #
   # print $response->is_success ? "Command successfully sent to Somfy.\n" : "Command failed: " . $response->status_line . "\n";
   print "Command failed: " . $response->status_line . "\n" unless $response->is_success;
-  
+
   # Update the state file only if there's been successful movement.
   #
   if($response->is_success && $DIRECTION ne 'S') {
     my $pval = 0;
-    
+
     $pval = 100 if $DIRECTION eq 'U';
-    
+
     if($WMAP{$CHANNEL}) {
       my @arr = @{$WMAP{$CHANNEL}};
       foreach(@arr) {
         $POS{$_} = $pval;
       }
     }
-  
+
     $POS{$CHANNEL} = $pval;
-    
+
     if(open(STATEFILE, '>' . $STATE)) {
       foreach(keys %POS) {
         print STATEFILE "$_:$POS{$_}\n";
@@ -193,5 +204,9 @@ for(; $REPEAT > 0; $REPEAT--) {
 
   # Briefly pause.
   #
-  usleep(500000);
+  usleep(200000);
 }
+
+# Let HomeKit know the exact position we're in.
+print "100\n" if $DIRECTION eq "U";
+print "0\n" if $DIRECTION eq "D";

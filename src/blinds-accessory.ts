@@ -1,6 +1,6 @@
 /* Copyright(C) 2017-2020, HJD (https://github.com/hjdhjd). All rights reserved.
  *
- * blind-accessory.ts: homebridge-blinds-cmd window covering accessory.
+ * blinds-accessory.ts: homebridge-blinds-cmd window covering accessory.
  */
 import execa from "execa";
 import {

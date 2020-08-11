@@ -68,6 +68,11 @@ class BlindsCmd implements AccessoryPlugin {
     // Configure our status refresh polling.
     this.refreshInterval = config.refresh;
 
+    // Make sure we have a sane value for refresh.
+    if(this.refreshInterval < 0) {
+      this.refreshInterval = 0;
+    }
+
     // Initialize the blinds. This is a value between 0 - 100, in single steps.
     this.currentPosition = 0;
     this.positionState = api.hap.Characteristic.PositionState.STOPPED;
@@ -178,7 +183,7 @@ class BlindsCmd implements AccessoryPlugin {
     // Execute the move command.
     let newPosition = await this.execCommand((moveUp ? this.cmd.up : this.cmd.down) + " " + this.targetPosition);
 
-    // Clear out the last delay timer, if configured one.
+    // Clear out the previous delay timer, if one is configured.
     if(this.delayTime) {
       clearTimeout(this.moveTimer);
     }
@@ -233,19 +238,19 @@ class BlindsCmd implements AccessoryPlugin {
       // Get our updated state.
       const updatedPosition = await self.execCommand(self.cmd.status);
 
-      // If we had an error getting the initial state, assume the blinds are closed.
-      if(updatedPosition === -1) {
-        return;
+      // Only update our state if we received a valid status update.
+      if(updatedPosition !== -1) {
+        self.currentPosition = updatedPosition;
+        self.targetPosition = updatedPosition;
+
+        self.blindsService.getCharacteristic(Characteristic.CurrentPosition).updateValue(self.currentPosition);
+        self.blindsService.getCharacteristic(Characteristic.TargetPosition).updateValue(self.targetPosition);
       }
 
-      self.currentPosition = updatedPosition;
-      self.targetPosition = updatedPosition;
-
-      self.blindsService.getCharacteristic(Characteristic.CurrentPosition).updateValue(self.currentPosition);
-      self.blindsService.getCharacteristic(Characteristic.TargetPosition).updateValue(self.targetPosition);
-
       // Fire off the next polling interval.
-      self.poll();
+      if(self.refreshInterval) {
+        self.poll();
+      }
     }, this.refreshInterval * 1000);
   }
 

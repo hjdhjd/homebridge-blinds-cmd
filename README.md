@@ -11,12 +11,12 @@
 ## HomeKit support for non-smart motorized blinds through command-line scripts.
 </SPAN>
 
-`homebridge-blinds-cmd` is a [Homebridge](https://homebridge.io) plugin that allows you to get the statu of, raise or lower your window blinds by executing a given command-line or script. It makes a HomeKit window covering accessory available to you that can report status and be controlled entirely through command-line scripts.
+`homebridge-blinds-cmd` is a [Homebridge](https://homebridge.io) plugin that allows you to raise, lower, and get the current position of your window blinds by executing a given command-line or script. It makes a HomeKit window covering accessory available to you that can report status and be controlled entirely through command-line scripts.
 
 ## Why use this plugin for window blinds support in HomeKit?
-These days, there is a decent selection of window blinds available on the market with native HomeKit support. However, there are also many legacy blinds systems, such as Somfy, which don't have any meaningful HomeKit support. Add to that the proprietary remote protocols and you're in for a challenge in trying to make window blinds part of your [HomeKit](https://www.apple.com/ios/home) smart home.
+These days, there is a decent selection of window blinds available on the market with native HomeKit support. However, there are also blinds systems, such as Somfy, which don't have any meaningful HomeKit support. Add to that the proprietary remote protocols and you're in for a challenge in trying to make window blinds part of your [HomeKit](https://www.apple.com/ios/home) smart home.
 
-There are other blinds plugins for Homebridge that are more focused on providing HomeKit support for HTTP-enabled blinds, and they work great if that's what you're seeking. You can certainly do that with this plugin, though you'll be writing your own scripts to do so. So why use this plugin in particular in this scenario? Well, in some cases you've got complex state conditions you want to reflect in HomeKit.
+There are other blinds plugins for Homebridge that are either tailored to specific blinds solutions, or more broadly focused on blinds that can be controlled through HTTP -- and they do a great job if that's what you're seeking. You can certainly do those things with this plugin, though you'll be writing your own scripts to do so. So why use this plugin in particular in this scenario? Well, in some cases you've got complex state conditions you want to reflect in HomeKit.
 
 For instance, let's take the example of a living room with two motorized Somfy shades (I'm picking Somfy for this example because it's what I'm most familiar with, but other brands have similar concepts). In our example, we have a remote control that has three presets configured - one to control the first shade, one to control the second shade, and one to control both simultaneously. Controlling each of the individual shades is an easy enough task for most of the blinds-related Homebridge plugins.
 
@@ -73,7 +73,7 @@ For those that prefer configuring things directly, add the accessory in `config.
       }
     ```
 
-  The above configured script will be called as <CODE>/path/to/raise_blinds_script <I>100</I></CODE>, where 100 is whatever value was requested by the end user and passed on to HomeKit. This should enable those who wish to take advantage of situations where you may want to only open a shade half way, to do so. Finallt, the script should output a number from 0 to 100 to inform HomeKit of what the new position of the blind is.
+  The above configured script will be called as <CODE>/path/to/raise_blinds_script <I>100</I></CODE>, where 100 is whatever value was requested by the end user and passed on to HomeKit. This should enable those who wish to take advantage of situations where you may want to only open a shade half way, to do so. Finally, the script should output a number from 0 to 100 to inform HomeKit of what the new position of the blind is.
 
 ## Notes
 This plugin doesn't query nor have direct knowledge of the actual position of your blinds. Instead, it emulates the position based on your most recent request to raise / lower the blinds (i.e. it remembers what you last asked it to do and reports that back to HomeKit). Some blinds, such as Somfy, don't support querying their specific state. That said, if you do wish to use a specific position, you can do so. It's passed as the last argument to the up and down script configuration options. How you choose to handle it, is up to you. What your plugin should output is the position it wants to HomeKit (e.g. 100 if the blind is fully open).

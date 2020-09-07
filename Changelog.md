@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. This project uses [semantic versioning](https://semver.org/).
 
+## 3.0.1 (2020-09-06)
+  * Properly name the stop switch for clarity.
+
 ## 3.0.0 (2020-09-06)
   * Refactored (again! :smile:) to be a platform plugin.
   * New feature: add the ability to stop a shade mid-flight. The stop capability is enabled with a switch. See documentation for more details.

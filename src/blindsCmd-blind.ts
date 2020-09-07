@@ -220,7 +220,7 @@ export class Blind {
     }
 
     // Now add the switch service.
-    switchService = new this.hap.Service.Switch(this.accessory.displayName);
+    switchService = new this.hap.Service.Switch(this.accessory.displayName + " Stop");
     this.accessory.addService(switchService);
 
     // Grab the blind service too.

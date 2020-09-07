@@ -4,9 +4,9 @@
 
 # Homebridge Blinds Command
 
-[![Downloads](https://badgen.net/npm/dt/homebridge-blinds-cmd)](https://www.npmjs.com/package/homebridge-blinds-cmd)
-[![Version](https://badgen.net/npm/v/homebridge-blinds-cmd)](https://www.npmjs.com/package/homebridge-blinds-cmd)
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![Downloads](https://img.shields.io/npm/dt/homebridge-blinds-cmd?color=%23333333&logo=icloud&logoColor=%23FFFFFF&style=for-the-badge)](https://www.npmjs.com/package/homebridge-blinds-cmd)
+[![Version](https://img.shields.io/npm/v/homebridge-blinds-cmd?label=Blinds%20Cmd%202&color=%23333333&logo=node.js&logoColor=%23FFFFFF&style=for-the-badge)](https://www.npmjs.com/package/homebridge-blinds-cmd)
+[![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%2357277C&style=for-the-badge)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 ## HomeKit support for non-smart motorized blinds through command-line scripts.
 </SPAN>
@@ -36,9 +36,7 @@ If you prefer to install `homebridge-blinds-cmd` from the command line, you can 
 sudo npm install -g homebridge-blinds-cmd
 ```
 
-
 ## Configuration
-
 I would strongly recommend using the [Homebridge Config UI](https://github.com/oznu/homebridge-config-ui-x) rather than editing your config.json directly. It does a good job of showing you all the options and always generating a valid configuration so you don't get stuck on typos or looking for stray commas in your `config.json`.
 
 For those that prefer configuring things directly, add the accessory in `config.json` in your home directory inside `.homebridge`.
@@ -53,16 +51,24 @@ For those that prefer configuring things directly, add the accessory in `config.
       "up": "/path/to/your/raise_blinds_script",
       "down": "/path/to/your/lower_blinds_script",
       "status": "/path/to/your/blinds_state_script",
-      "delay": 30,
-      "refresh": 5,
+      "stop": "/path/to/your/stop_blinds_script",
+      "transitionInterval": 30,
+      "refreshRate": 5
     }
 ```
 
-## Script inputs and outputs
+### Options
+* `up`, `down`, `stop`, and `status` should point to scripts or command lines to run to execute those actions. `up` and `down` are required, and all others are optional.
+* Setting a `stop` command will create an additional switch that you can use to stop the blind when it is moving. Unfortunately, HomeKit doesn't allow for the concept of stopping a blind while it is moving - your choices are to open or close. To workaround this limitation, a switch service is added to the blind that allows you to stop the blind when it's moving.
+* `accessory`, `manufacturer`, `model`, and `serial` are optional settings to allow you to further identify your blinds in HomeKit.
+* `transitionInterval` is an optional setting that allows you to simulate a blind transition movement between open and closed. If it takes 10 seconds for the blinds to open, enter `10` here and `homebridge-blinds-cmd` will simulate the time it takes to complete that transition in HomeKit.
+* `refreshRate` will execute the `status` command at whatever refresh rate you set, in seconds. This is useful when the state of your blinds changes outside of HomeKit, and you want to regularly check it's status.
+
+### Script inputs and outputs
 `homebridge-blinds-cmd` expected the following:
 
 * **`status` script:** Should output a number from 0 to 100 to inform HomeKit of what the current position of the blind is.
-* **`up` or `down` script:** Must be able to accept an additional argument containing the position that's been requested by the user.
+* **`up`, `down`, or `stop` script:** Must be able to accept an additional argument containing the position that's been requested by the user.
   For example:
 
     ```js

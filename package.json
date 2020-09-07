@@ -1,6 +1,6 @@
 {
   "name": "homebridge-blinds-cmd",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "displayName": "Homebridge Blinds Command",
   "description": "HomeKit support for non-smart motorized blinds through command-line scripts.",
   "author": "HJD https://github.com/hjdhjd",
@@ -44,15 +44,15 @@
     "dist",
     "somfy.pl"
   ],
-  "main": "dist/blinds-accessory.js",
+  "main": "dist/index.js",
   "devDependencies": {
-    "@types/node": "^10.17.27",
-    "@typescript-eslint/eslint-plugin": "^3.6.0",
-    "@typescript-eslint/parser": "^3.6.0",
-    "eslint": "^7.4.0",
-    "homebridge": "^1.1.1",
+    "@types/node": "^14.6.4",
+    "@typescript-eslint/eslint-plugin": "^4.0.1",
+    "@typescript-eslint/parser": "^4.0.1",
+    "eslint": "^7.8.1",
+    "homebridge": "^1.1.3",
     "rimraf": "^3.0.2",
-    "typescript": "^3.9.6"
+    "typescript": "^4.0.2"
   },
   "dependencies": {
     "execa": "^4.0.3"

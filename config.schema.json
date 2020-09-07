@@ -1,85 +1,174 @@
 {
   "pluginAlias": "Blinds Command",
-  "pluginType": "accessory",
-  "headerDisplay": "homebridge-blinds-cmd provides a window covering (or blind) accessory to HomeKit, providing control and status functions through the command line scripts.",
+  "pluginType": "platform",
+  "headerDisplay": "homebridge-blinds-cmd creates window covering (or blind) accessories in HomeKit, providing control and status functions through the command line scripts.",
   "footerDisplay": "For additional help and documentation please see the [developer page](https://github.com/hjdhjd/homebridge-blinds-cmd).",
-  "singular": false,
+  "singular": true,
 
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "type": "string",
-        "title": "Blind Name",
-        "required": false,
-        "placeholder": "Blinds",
-        "description": "Name you want to give this blind accessory in HomeKit. Default: Blinds."
-      },
 
-      "up": {
-        "type": "string",
-        "title": "Up Command Script",
-        "required": true,
-        "placeholder": "/path/to/your/raise-blinds-script",
-        "description": "Path to the command or script to raise the blind. Default: none."
-      },
+      "blinds": {
+        "type": "array",
+        "title": "Blinds",
 
-      "down": {
-        "type": "string",
-        "title": "Down Command Script",
-        "required": true,
-        "placeholder": "/path/to/your/lower-blinds-script",
-        "description": "Path to the command or script to lower the blind. Default: none."
-      },
+        "items": {
+          "type": "object",
+          "title": "Blind",
+          "properties": {
 
-      "status": {
-        "type": "string",
-        "title": "Status Command Script",
-        "required": false,
-        "placeholder": "/path/to/your/blinds-status-script",
-        "description": "Path to the command or script to show the current position of the blind. Default: none."
-      },
+            "name": {
+              "type": "string",
+              "title": "Blind Name",
+              "required": true,
+              "placeholder": "Blinds",
+              "description": "Name you want to give this blind accessory in HomeKit. Default: none."
+            },
 
-      "delay": {
-        "type": "number",
-        "title": "Simulated Delay Duration",
-        "required": false,
-        "minimum": 0,
-        "maximum": 120,
-        "placeholder": "30",
-        "description": "Duration, in seconds, of an open or close event used to simulate action progress in HomeKit. Default: 0 (disabled)."
-      },
+            "up": {
+              "type": "string",
+              "title": "Up Command Script",
+              "required": true,
+              "placeholder": "/path/to/your/raise-blinds-script",
+              "description": "Path to the command or script to raise the blind. Default: none."
+            },
 
-      "refresh": {
-        "type": "number",
-        "title": "Status Refresh Interval",
-        "required": false,
-        "minimum": 0,
-        "maximum": 120,
-        "placeholder": "30",
-        "description": "Interval, in seconds, to execute the status command or script in order to keep HomeKit up to date on blinds status. Default: 0 (disabled)."
-      },
+            "down": {
+              "type": "string",
+              "title": "Down Command Script",
+              "required": true,
+              "placeholder": "/path/to/your/lower-blinds-script",
+              "description": "Path to the command or script to lower the blind. Default: none."
+            },
 
-      "manufacturer": {
-        "type": "string",
-        "title": "Blind Manufacturer",
-        "required": false,
-        "description": "Manufacturer name to assign to this blind."
-      },
+            "stop": {
+              "type": "string",
+              "title": "Stop Command Script",
+              "required": false,
+              "placeholder": "/path/to/your/stop-blinds-script",
+              "description": "Path to the command or script to stop the blind. Default: none."
+            },
 
-      "model": {
-        "type": "string",
-        "title": "Blind Model",
-        "required": false,
-        "description": "Model name to assign to this blind."
-      },
+            "status": {
+              "type": "string",
+              "title": "Status Command Script",
+              "required": false,
+              "placeholder": "/path/to/your/blinds-status-script",
+              "description": "Path to the command or script to show the current position of the blind. Default: none."
+            },
 
-      "serial": {
-      "type": "string",
-      "title": "Blind Serial",
-      "required": false,
-      "description": "Serial number of this blind."
+            "transitionInterval": {
+              "type": "number",
+              "title": "Simulated Transition Duration",
+              "required": false,
+              "minimum": 0,
+              "maximum": 120,
+              "placeholder": "30",
+              "description": "Duration, in seconds, of an open or close event used to simulate action progress in HomeKit. Default: 0 (disabled)."
+            },
+
+            "refreshRate": {
+              "type": "number",
+              "title": "Status Refresh Interval",
+              "required": false,
+              "minimum": 0,
+              "maximum": 120,
+              "placeholder": "30",
+              "description": "Interval, in seconds, to execute the status command or script in order to keep HomeKit up to date on blinds status. Default: 0 (disabled)."
+            },
+
+            "manufacturer": {
+              "type": "string",
+              "title": "Blind Manufacturer",
+              "required": false,
+              "description": "Manufacturer name to assign to this blind."
+            },
+
+            "model": {
+              "type": "string",
+              "title": "Blind Model",
+              "required": false,
+              "description": "Model name to assign to this blind."
+            },
+
+            "serial": {
+            "type": "string",
+            "title": "Blind Serial",
+            "required": false,
+            "description": "Serial number of this blind."
+            }
+          }
+        }
       }
     }
-  }
+  },
+
+  "layout": [
+    {
+      "key": "blinds",
+      "type": "array",
+      "name": " ",
+      "description": "Provide the details of your blinds.",
+      "orderable": true,
+      "buttonText": "Add Blind",
+      "items": [
+        "blinds[].name",
+
+        {
+          "key": "blinds[]",
+          "type": "section",
+          "title": "Blind Commands",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            {
+              "description": "Commands to control your blinds.",
+              "items": [
+                "blinds[].up",
+                "blinds[].down",
+                "blinds[].stop",
+                "blinds[].status"
+              ]
+            }
+          ]
+        },
+
+        {
+          "key": "blinds[]",
+          "type": "section",
+          "title": "Optional Settings",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            {
+              "description": "These settings are optional and provide additional customization settings.",
+              "items": [
+                "blinds[].transitionInterval",
+                "blinds[].refreshRate"
+              ]
+            }
+          ]
+        },
+
+        {
+          "key": "blinds[]",
+          "type": "section",
+          "title": "Blind Information",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            {
+              "description": "These settings are optional and allow you to set additional information about your blinds.",
+              "items": [
+                "blinds[].manufacturer",
+                "blinds[].model",
+                "blinds[].serial"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

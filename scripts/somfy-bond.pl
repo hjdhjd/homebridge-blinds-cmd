@@ -13,10 +13,10 @@
 #
 # Example commands for your Homebridge config.json with homebridge-blinds-cmd:
 #
-#   "up": "~/path/to/somfy.pl 3 up",
-#   "down": "~/path/to/somfy.pl 3 down",
-#   "stop": "~/path/to/somfy.pl 3 stop",
-#   "state": "~/path/to/somfy.pl 3 status"
+#   "up": ~/path/to/somfy-bond.pl "Shade 1" up
+#   "down": ~/path/to/somfy-bond.pl "Shade 1" down
+#   "stop": ~/path/to/somfy-bond.pl "Shade 1" stop
+#   "state": ~/path/to/somfy-bond.pl "Shade 1" status
 #
 use strict;
 use warnings;

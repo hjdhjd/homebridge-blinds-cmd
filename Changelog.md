@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. This project uses [semantic versioning](https://semver.org/).
 
+## 3.0.2 (2020-09-19)
+  * Documentation updates and script examples.
+
 ## 3.0.1 (2020-09-06)
   * Properly name the stop switch for clarity.
 

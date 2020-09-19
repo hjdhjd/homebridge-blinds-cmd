@@ -1,6 +1,6 @@
 {
   "name": "homebridge-blinds-cmd",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "displayName": "Homebridge Blinds Command",
   "description": "HomeKit support for non-smart motorized blinds through command-line scripts.",
   "author": "HJD https://github.com/hjdhjd",

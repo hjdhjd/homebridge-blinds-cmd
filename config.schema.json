@@ -22,7 +22,7 @@
               "type": "string",
               "title": "Blind Name",
               "required": true,
-              "placeholder": "Blinds",
+              "placeholder": "e.g. Blinds",
               "description": "Name you want to give this blind accessory in HomeKit. Default: none."
             },
 
@@ -30,7 +30,7 @@
               "type": "string",
               "title": "Up Command Script",
               "required": true,
-              "placeholder": "/path/to/your/raise-blinds-script",
+              "placeholder": "e.g. /path/to/your/raise-blinds-script",
               "description": "Path to the command or script to raise the blind. Default: none."
             },
 
@@ -38,7 +38,7 @@
               "type": "string",
               "title": "Down Command Script",
               "required": true,
-              "placeholder": "/path/to/your/lower-blinds-script",
+              "placeholder": "e.g. /path/to/your/lower-blinds-script",
               "description": "Path to the command or script to lower the blind. Default: none."
             },
 
@@ -46,7 +46,7 @@
               "type": "string",
               "title": "Stop Command Script",
               "required": false,
-              "placeholder": "/path/to/your/stop-blinds-script",
+              "placeholder": "e.g. /path/to/your/stop-blinds-script",
               "description": "Path to the command or script to stop the blind. Default: none."
             },
 
@@ -54,7 +54,7 @@
               "type": "string",
               "title": "Status Command Script",
               "required": false,
-              "placeholder": "/path/to/your/blinds-status-script",
+              "placeholder": "e.g. /path/to/your/blinds-status-script",
               "description": "Path to the command or script to show the current position of the blind. Default: none."
             },
 
@@ -64,7 +64,7 @@
               "required": false,
               "minimum": 0,
               "maximum": 120,
-              "placeholder": "30",
+              "placeholder": "e.g. 30",
               "description": "Duration, in seconds, of an open or close event used to simulate action progress in HomeKit. Default: 0 (disabled)."
             },
 
@@ -74,7 +74,7 @@
               "required": false,
               "minimum": 0,
               "maximum": 120,
-              "placeholder": "30",
+              "placeholder": "e.g. 10",
               "description": "Interval, in seconds, to execute the status command or script in order to keep HomeKit up to date on blinds status. Default: 0 (disabled)."
             },
 
@@ -82,6 +82,7 @@
               "type": "string",
               "title": "Blind Manufacturer",
               "required": false,
+              "placeholder": "e.g. SomeManufacturer",
               "description": "Manufacturer name to assign to this blind."
             },
 
@@ -89,6 +90,7 @@
               "type": "string",
               "title": "Blind Model",
               "required": false,
+              "placeholder": "e.g. SomeModel",
               "description": "Model name to assign to this blind."
             },
 
@@ -96,6 +98,7 @@
             "type": "string",
             "title": "Blind Serial",
             "required": false,
+            "placeholder": "e.g. SomeSerial",
             "description": "Serial number of this blind."
             }
           }

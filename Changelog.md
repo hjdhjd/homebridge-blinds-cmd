@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. This project uses [semantic versioning](https://semver.org/).
 
+## 3.0.4 (2020-09-19)
+  * Documentation updates and script examples.
+
 ## 3.0.3 (2020-09-19)
   * Documentation updates and script examples.
 

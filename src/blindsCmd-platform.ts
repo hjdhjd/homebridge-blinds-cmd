@@ -2,39 +2,39 @@
  *
  * blindsCmd-platform.ts: homebridge-blinds-cmd platform class.
  */
-import { Blind } from "./blindsCmd-blind";
-import { BlindsCmdConfig, BlindConfig } from "./blindsCmd-types";
 import { API, APIEvent, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig } from "homebridge";
+import { BlindConfig, BlindsCmdConfig } from "./blindsCmd-types";
+import { PLATFORM_NAME, PLUGIN_NAME } from "./settings";
+import { Blind } from "./blindsCmd-blind";
 import util from "util";
 
 export class BlindsCmdPlatform implements DynamicPlatformPlugin {
   public accessories: PlatformAccessory[] = [];
   public readonly api: API;
   private readonly blinds: Blind[] = [];
-  private config: BlindsCmdConfig;
+  private config!: BlindsCmdConfig;
   public debugMode = false;
   public readonly log: Logging;
 
   constructor(log: Logging, config: PlatformConfig, api: API) {
     this.api = api;
-
-    // Force this to DoorbirdConfig.
-    this.config = {
-      blinds: config.blinds as BlindConfig[]
-    };
-
     this.log = log;
 
-    // We can't start without being configured.
+    // No configuration found - we won't start.
     if(!config) {
       return;
     }
 
-    // We need a Doorbird configured to do anything.
+    // If we don't have any blinds configured, we're done here.
     if(!config.blinds) {
-      this.log("No blinds have been configured.");
+      this.log.error("No blinds have been configured.");
       return;
     }
+
+    // Force this to BlindConfig.
+    this.config = {
+      blinds: config.blinds as BlindConfig[]
+    };
 
     // Capture configuration parameters.
     if(config.debug) {
@@ -47,9 +47,7 @@ export class BlindsCmdPlatform implements DynamicPlatformPlugin {
     api.on(APIEvent.DID_FINISH_LAUNCHING, this.configureBlinds.bind(this));
   }
 
-  // This gets called when homebridge restores cached accessories at startup. We
-  // intentionally avoid doing anything significant here, and save all that logic
-  // for device discovery.
+  // This gets called when homebridge restores cached accessories at startup.
   configureAccessory(accessory: PlatformAccessory): void {
 
     // Add this to the accessory array so we can track it.
@@ -69,6 +67,19 @@ export class BlindsCmdPlatform implements DynamicPlatformPlugin {
       }
 
       this.blinds.push(new Blind(this, blindsConfig));
+    }
+
+    // Remove any blinds that are no longer configured.
+    for(const accessory of this.accessories) {
+
+      // We've configured this blind already, let's keep going.
+      if(this.blinds.some(x => x.accessory.UUID === accessory.UUID)) {
+        continue;
+      }
+
+      // If we have a blind that we don't have a configuration for, remove it and inform the user.
+      this.log.info("Removing blind from HomeKit: %s.", accessory.displayName);
+      this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
   }
 

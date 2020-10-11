@@ -43,25 +43,32 @@ I would strongly recommend using the [Homebridge Config UI](https://github.com/o
 For those that prefer configuring things directly, add the accessory in `config.json` in your home directory inside `.homebridge`.
 
 ```js
-   {
-      "accessory": "Blinds Command",
-      "manufacturer": "Somfy",
-      "model": "Sonesse",
-      "serial": "1234",
-      "name": "Downstairs Window Blinds",
-      "up": "/path/to/your/raise_blinds_script",
-      "down": "/path/to/your/lower_blinds_script",
-      "status": "/path/to/your/blinds_state_script",
-      "stop": "/path/to/your/stop_blinds_script",
-      "transitionInterval": 30,
-      "refreshRate": 5
+   "platforms": [
+     {
+       "platform": "Blinds Command",
+
+       "blinds": [
+         {
+           "name": "Downstairs Window Blinds",
+           "manufacturer": "Somfy",
+           "model": "Sonesse",
+           "serial": "1234",
+           "up": "/path/to/your/raise_blinds_script",
+           "down": "/path/to/your/lower_blinds_script",
+           "status": "/path/to/your/blinds_state_script",
+           "stop": "/path/to/your/stop_blinds_script",
+           "transitionInterval": 30,
+           "refreshRate": 5
+         }
+      ]
     }
+  ]
 ```
 
 ### Options
 * `up`, `down`, `stop`, and `status` should point to scripts or command lines to run to execute those actions. `up` and `down` are required, and all others are optional.
 * Setting a `stop` command will create an additional switch that you can use to stop the blind when it is moving. Unfortunately, HomeKit doesn't allow for the concept of stopping a blind while it is moving - your choices are to open or close. To workaround this limitation, a switch service is added to the blind that allows you to stop the blind when it's moving.
-* `accessory`, `manufacturer`, `model`, and `serial` are optional settings to allow you to further identify your blinds in HomeKit.
+* `manufacturer`, `model`, and `serial` are optional settings to allow you to further identify your blinds in HomeKit.
 * `transitionInterval` is an optional setting that allows you to simulate a blind transition movement between open and closed. If it takes 10 seconds for the blinds to open, enter `10` here and `homebridge-blinds-cmd` will simulate the time it takes to complete that transition in HomeKit.
 * `refreshRate` will execute the `status` command at whatever refresh rate you set, in seconds. This is useful when the state of your blinds changes outside of HomeKit, and you want to regularly check it's status.
 

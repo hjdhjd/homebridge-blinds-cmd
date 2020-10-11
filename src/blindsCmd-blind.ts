@@ -2,9 +2,6 @@
  *
  * blindsCmd-blinds.ts: homebridge-blinds-cmd window covering accessory.
  */
-import { BlindsCmdPlatform } from "./blindsCmd-platform";
-import { BlindConfig } from "./blindsCmd-types";
-import execa from "execa";
 import {
   API,
   CharacteristicEventTypes,
@@ -20,6 +17,9 @@ import {
   PLATFORM_NAME,
   PLUGIN_NAME
 } from "./settings";
+import { BlindConfig } from "./blindsCmd-types";
+import { BlindsCmdPlatform } from "./blindsCmd-platform";
+import execa from "execa";
 
 interface cmdOptions {
   down: string,
@@ -29,7 +29,7 @@ interface cmdOptions {
 }
 
 export class Blind {
-  private accessory!: PlatformAccessory;
+  public accessory!: PlatformAccessory;
   private api: API;
   private readonly cmd: cmdOptions;
   private readonly config: BlindConfig;
@@ -47,7 +47,6 @@ export class Blind {
   private pollingTimer!: NodeJS.Timeout;
   private positionState!: CharacteristicValue;
   private readonly refreshRate!: number;
-
   private targetPosition!: number;
 
   constructor(platform: BlindsCmdPlatform, blindConfig: BlindConfig) {
@@ -64,7 +63,7 @@ export class Blind {
     this.name = blindConfig.name;
 
     // Get our commands to execute.
-    this.cmd = { down: blindConfig.down, status: blindConfig.status, up: blindConfig.up, stop: blindConfig.stop };
+    this.cmd = { down: blindConfig.down, status: blindConfig.status, stop: blindConfig.stop, up: blindConfig.up };
 
     // No up or down commands defined, we're done.
     if(!this.name || !this.cmd.up || !this.cmd.down) {
@@ -104,7 +103,7 @@ export class Blind {
   private async configureBlind(): Promise<boolean> {
     const Characteristic = this.api.hap.Characteristic;
 
-    // Generate this Doorbird's unique identifier.
+    // Generate this blind's unique identifier.
     const uuid = this.hap.uuid.generate("Blinds Command." + this.name);
 
     // See if we already know about this accessory or if it's truly new. If it is new, add it to HomeKit.
@@ -118,7 +117,7 @@ export class Blind {
       this.platform.accessories.push(this.accessory);
     }
 
-    // We already knew about this accessory after all, set it.
+    // We already had this accessory cached, let's use it.
     if(accessory) {
       this.accessory = accessory;
     }
@@ -186,19 +185,25 @@ export class Blind {
   private configureInfo(): boolean {
 
     // Update the manufacturer information for this blind.
-    this.accessory
-      .getService(this.hap.Service.AccessoryInformation)
-      ?.getCharacteristic(this.hap.Characteristic.Manufacturer).updateValue(this.config.manufacturer);
+    if(this.config.manufacturer) {
+      this.accessory
+        .getService(this.hap.Service.AccessoryInformation)
+        ?.getCharacteristic(this.hap.Characteristic.Manufacturer).updateValue(this.config.manufacturer);
+    }
 
     // Update the model information for this blind.
-    this.accessory
-      .getService(this.hap.Service.AccessoryInformation)
-      ?.getCharacteristic(this.hap.Characteristic.Model).updateValue(this.config.model);
+    if(this.config.model) {
+      this.accessory
+        .getService(this.hap.Service.AccessoryInformation)
+        ?.getCharacteristic(this.hap.Characteristic.Model).updateValue(this.config.model);
+    }
 
     // Update the serial number for this blind.
-    this.accessory
-      .getService(this.hap.Service.AccessoryInformation)
-      ?.getCharacteristic(this.hap.Characteristic.SerialNumber).updateValue(this.config.serial);
+    if(this.config.serial) {
+      this.accessory
+        .getService(this.hap.Service.AccessoryInformation)
+        ?.getCharacteristic(this.hap.Characteristic.SerialNumber).updateValue(this.config.serial);
+    }
 
     return true;
   }
@@ -406,6 +411,7 @@ export class Blind {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  // Move a blind in HomeKit.
   private moveBlind(blindsService: Service, timeLeft: number, finalPosition: number, increment: number): void {
 
     const Characteristic = this.hap.Characteristic;

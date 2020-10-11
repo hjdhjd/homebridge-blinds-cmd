@@ -33,5 +33,3 @@ export type DeepPartial<T> = {
 // every property as readonly along the way.
 export type BlindsCmdConfig = Readonly<BlindsCmdConfigInterface>;
 export type BlindConfig = Readonly<BlindConfigInterface>;
-
-// export type ProtectCameraConfigPayload = DeepPartial<ProtectCameraConfigInterface>;

@@ -23,7 +23,7 @@
               "title": "Blind Name",
               "required": true,
               "placeholder": "e.g. Blinds",
-              "description": "Name you want to give this blind accessory in HomeKit. Default: none."
+              "description": "Name you want to give this blind accessory in HomeKit. Each blind must have a unique name."
             },
 
             "up": {

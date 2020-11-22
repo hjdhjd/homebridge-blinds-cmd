@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. This project uses [semantic versioning](https://semver.org/).
 
+## 3.0.6 (2020-11-22)
+  * Dependency updates.
+
 ## 3.0.5 (2020-10-11)
   * Fix: don't try to configure blind information if it's not provided.
   * Fix: remove blinds from HomeKit when they are no longer configured in Homebridge.

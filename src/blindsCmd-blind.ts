@@ -39,7 +39,7 @@ export class Blind {
   private readonly hap: HAP;
   private isMoving: boolean;
   private readonly log: Logging;
-  private moveInterval!: number;
+  private moveIncrementInterval!: number;
   private moveTimer!: NodeJS.Timeout;
   private readonly name: string;
   private readonly platform: BlindsCmdPlatform;
@@ -77,7 +77,7 @@ export class Blind {
     }
 
     // If we have a transition time set, calculate how many milliseconds are needed to increment the position by one, in milliseconds.
-    this.moveInterval = this.transitionInterval ? (this.transitionInterval * 10) : 1000;
+    this.moveIncrementInterval = this.transitionInterval ? (this.transitionInterval * 10) : 100;
 
     // Configure our status refresh polling.
     this.refreshRate = blindConfig.refreshRate;
@@ -402,13 +402,12 @@ export class Blind {
         this.accessory.context.blindPosition = this.targetPosition = this.currentPosition = finalPosition;
         this.positionState = this.hap.Characteristic.PositionState.STOPPED;
 
-        blindsService.getCharacteristic(this.hap.Characteristic.TargetPosition).updateValue(this.currentPosition);
+        blindsService.getCharacteristic(this.hap.Characteristic.TargetPosition).updateValue(this.targetPosition);
         blindsService.getCharacteristic(this.hap.Characteristic.CurrentPosition).updateValue(this.currentPosition);
         blindsService.getCharacteristic(this.hap.Characteristic.PositionState).updateValue(this.positionState);
 
         // We're done moving.
         this.isMoving = false;
-
         return;
       }
 
@@ -416,7 +415,7 @@ export class Blind {
       blindsService.getCharacteristic(this.hap.Characteristic.CurrentPosition).updateValue(this.currentPosition);
       this.moveBlind(blindsService, finalPosition, increment);
 
-    }, this.moveInterval);
+    }, this.moveIncrementInterval);
 
   }
 

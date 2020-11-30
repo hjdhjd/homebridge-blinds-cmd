@@ -62,7 +62,7 @@ export class BlindsCmdPlatform implements DynamicPlatformPlugin {
 
       // No name or up or down commands defined, we're done.
       if(!blindsConfig.up || !blindsConfig.down || !blindsConfig.name) {
-        this.log("Name, up, and down commands are required configuration parameters.");
+        this.log.error("Name, up, and down commands are required configuration parameters.");
         continue;
       }
 
@@ -86,7 +86,7 @@ export class BlindsCmdPlatform implements DynamicPlatformPlugin {
   // Utility for debug logging.
   debug(message: string, ...parameters: unknown[]): void {
     if(this.debugMode) {
-      this.log(util.format(message, ...parameters));
+      this.log.error(util.format(message, ...parameters));
     }
   }
 }

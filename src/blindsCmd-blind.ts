@@ -33,21 +33,20 @@ export class Blind {
   private api: API;
   private readonly cmd: cmdOptions;
   private readonly config: BlindConfig;
-  private currentPosition!: number;
+  private currentPosition!: CharacteristicValue;
   private debug: (message: string, ...parameters: unknown[]) => void;
   private readonly transitionInterval!: number;
   private readonly hap: HAP;
   private isMoving: boolean;
-  private isStopped: boolean;
   private readonly log: Logging;
-  private moveIncrement!: number;
+  private moveInterval!: number;
   private moveTimer!: NodeJS.Timeout;
   private readonly name: string;
   private readonly platform: BlindsCmdPlatform;
   private pollingTimer!: NodeJS.Timeout;
   private positionState!: CharacteristicValue;
   private readonly refreshRate!: number;
-  private targetPosition!: number;
+  private targetPosition!: CharacteristicValue;
 
   constructor(platform: BlindsCmdPlatform, blindConfig: BlindConfig) {
     this.api = platform.api;
@@ -55,7 +54,6 @@ export class Blind {
     this.debug = platform.debug.bind(platform);
     this.hap = this.api.hap;
     this.isMoving = false;
-    this.isStopped = false;
     this.log = platform.log;
     this.platform = platform;
 
@@ -78,8 +76,8 @@ export class Blind {
       this.transitionInterval = 0;
     }
 
-    // Calculate our move increment if we have a transition time set.
-    this.moveIncrement = this.transitionInterval ? Math.round(100 / this.transitionInterval) : 100;
+    // If we have a transition time set, calculate how many milliseconds are needed to increment the position by one, in milliseconds.
+    this.moveInterval = this.transitionInterval ? (this.transitionInterval * 10) : 1000;
 
     // Configure our status refresh polling.
     this.refreshRate = blindConfig.refreshRate;
@@ -94,13 +92,13 @@ export class Blind {
     this.positionState = this.api.hap.Characteristic.PositionState.STOPPED;
     this.targetPosition = 0;
 
-    void this.configureBlind();
+    this.configureBlind();
     this.configureInfo();
     this.configureStop();
   }
 
   // Configure the blind accessory.
-  private async configureBlind(): Promise<boolean> {
+  private configureBlind(): boolean {
     const Characteristic = this.api.hap.Characteristic;
 
     // Generate this blind's unique identifier.
@@ -122,28 +120,36 @@ export class Blind {
       this.accessory = accessory;
     }
 
-    // Clear out any previous window covering service.
+    // Check to see if we already have a window covering service.
     let blindsService = this.accessory.getService(this.hap.Service.WindowCovering);
 
-    if(blindsService) {
-      this.accessory.removeService(blindsService);
-    }
+    // No window covering service found, let's add it.
+    if(!blindsService) {
 
-    // Now add the window covering service.
-    blindsService = new this.hap.Service.WindowCovering(this.accessory.displayName);
-    this.accessory.addService(blindsService);
+      // Now add the window covering service.
+      blindsService = new this.hap.Service.WindowCovering(this.accessory.displayName);
+      this.accessory.addService(blindsService);
+
+    }
 
     // Initialize our state as stopped.
     blindsService.setCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
 
+    // See if we have saved a state for our blind.
+    this.currentPosition = -1;
+
+    if("blindPosition" in this.accessory.context) {
+      this.currentPosition = this.accessory.context.blindPosition as CharacteristicValue;
+    }
+
     // If we have a state command, use it to tell us where we should be on startup.
     if(this.cmd.status) {
-      this.currentPosition = await this.execCommand(this.cmd.status);
+      this.currentPosition = this.execCommand(this.cmd.status + (this.currentPosition !== -1 ? " " + this.currentPosition.toString() : ""));
+    }
 
-      // If we had an error getting the initial state, assume the blinds are closed.
-      if(this.currentPosition !== this.currentPosition) {
-        this.currentPosition = 0;
-      }
+    // If we had an error getting the initial state, assume the blinds are closed.
+    if(this.currentPosition === -1) {
+      this.currentPosition = 0;
     }
 
     // Set the initial position for our blinds.
@@ -163,7 +169,6 @@ export class Blind {
     blindsService
       .getCharacteristic(Characteristic.TargetPosition)
       .on(CharacteristicEventTypes.GET, this.getTargetPosition.bind(this))
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       .on(CharacteristicEventTypes.SET, this.setTargetPosition.bind(this));
 
     // Fire off our status polling, if configured.
@@ -172,8 +177,9 @@ export class Blind {
     }
 
     // Inform the user of our configuration.
-    this.log("%s: Commands configured: up, down%s%s.%s%s", this.accessory.displayName,
-      this.cmd.stop ? ", stop" : "", this.cmd.status ? ", status" : "",
+    this.log.info("%s: Commands configured: up, down%s%s.%s%s", this.accessory.displayName,
+      this.cmd.stop ? ", stop" : "",
+      this.cmd.status ? ", status" : "",
       this.transitionInterval ? " Transition time set to " + this.transitionInterval.toString() + " seconds." : "",
       this.refreshRate ? " Status refresh interval set to " + this.refreshRate.toString() + " seconds." : ""
     );
@@ -211,68 +217,32 @@ export class Blind {
   // Configure a stop switch.
   private configureStop(): boolean {
 
-    if(!this.cmd.stop) {
-      return false;
-    }
-
-    const Characteristic = this.api.hap.Characteristic;
-
     // Clear out any previous switch service.
-    let switchService = this.accessory.getService(this.hap.Service.Switch);
+    const switchService = this.accessory.getService(this.hap.Service.Switch);
 
     if(switchService) {
       this.accessory.removeService(switchService);
     }
 
-    // Now add the switch service.
-    switchService = new this.hap.Service.Switch(this.accessory.displayName + " Stop");
-    this.accessory.addService(switchService);
-
-    // Grab the blind service too.
-    const blindsService = this.accessory.getService(this.hap.Service.WindowCovering);
-
-    // If a stop command is configured, add a switch.
-    switchService
-      .getCharacteristic(this.hap.Characteristic.On)
-      .on(CharacteristicEventTypes.GET, (callback: CharacteristicGetCallback) => {
-        callback(null, this.isStopped === true);
-      })
-      .on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-        void (async (): Promise<void> => {
-          this.log("%s: Stopping at %s%%.", this.accessory.displayName, this.currentPosition);
-
-          // Stop any move in progress and execute the stop command.
-          clearTimeout(this.moveTimer);
-          this.isStopped = true;
-
-          const newPosition = await this.execCommand(this.cmd.stop + " " + this.currentPosition.toString());
-
-          // This validates that we didn't get NaN back. Use what we're told for our position.
-          if(newPosition === newPosition) {
-
-            this.currentPosition = newPosition;
-            this.targetPosition = newPosition;
-
-          } else {
-
-            // Use our current position based on what we know instead.
-            this.targetPosition = this.currentPosition;
-
-          }
-
-          // Let HomeKit know what the new states are.
-          this.positionState = Characteristic.PositionState.STOPPED;
-
-          blindsService?.getCharacteristic(Characteristic.TargetPosition).updateValue(this.targetPosition);
-          blindsService?.getCharacteristic(Characteristic.CurrentPosition).updateValue(this.currentPosition);
-          blindsService?.getCharacteristic(Characteristic.PositionState).updateValue(this.positionState);
-
-          callback(null);
-        })();
-      })
-      .updateValue(false);
-
     return true;
+  }
+
+  // User-friendly name for a given position.
+  private getPositionName(position: CharacteristicValue): string {
+
+    switch(position) {
+      case 0:
+        return "closed";
+        break;
+
+      case 100:
+        return "open";
+        break;
+
+      default:
+        return position.toString() + "%";
+        break;
+    }
   }
 
   // Get the current window covering state.
@@ -291,7 +261,7 @@ export class Blind {
   }
 
   // Set the target window covering state and execute the action.
-  private async setTargetPosition(value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
+  private setTargetPosition(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
     const Characteristic = this.hap.Characteristic;
 
     // Grab the blinds service.
@@ -320,16 +290,17 @@ export class Blind {
 
     // Figure out our move dynamics.
     const moveUp = value > this.currentPosition;
-    this.targetPosition = value as number;
+    this.targetPosition = value;
     this.positionState = moveUp ? Characteristic.PositionState.INCREASING : Characteristic.PositionState.DECREASING;
 
     // Tell HomeKit we're on the move.
     blindsService.getCharacteristic(Characteristic.PositionState).updateValue(this.positionState);
 
-    this.log("%s: Moving %s.", this.accessory.displayName, moveUp ? "up" : "down");
+    this.log.info("%s: Moving %s from %s to %s.", this.accessory.displayName, moveUp ? "up" : "down",
+      this.getPositionName(this.currentPosition), this.getPositionName(this.targetPosition));
 
     // Execute the move command.
-    let newPosition = await this.execCommand((moveUp ? this.cmd.up : this.cmd.down) + " " + this.targetPosition.toString());
+    let newPosition = this.execCommand((moveUp ? this.cmd.up : this.cmd.down) + " " + this.targetPosition.toString());
 
     // Something went wrong...cleanup and stop.
     if(newPosition === -1) {
@@ -348,7 +319,7 @@ export class Blind {
     }
 
     // Execute the move and we're done.
-    this.moveBlind(blindsService, this.transitionInterval, newPosition, moveUp ? this.moveIncrement : this.moveIncrement * -1);
+    this.moveBlind(blindsService, newPosition, moveUp ? 1 : -1);
 
     callback(null);
   }
@@ -382,26 +353,16 @@ export class Blind {
       }
 
       // Get our updated state.
-      let updatedPosition;
-
-      if(this.isStopped) {
-
-        updatedPosition = this.currentPosition;
-
-      } else {
-
-        // eslint-disable-next-line no-await-in-loop
-        updatedPosition = await this.execCommand(this.cmd.status);
-
-      }
+      const updatedPosition = this.execCommand(this.cmd.status + " " + this.currentPosition.toString());
 
       // Only update our state if we received a valid status update.
       if(updatedPosition !== -1) {
-        this.currentPosition = updatedPosition;
-        this.targetPosition = updatedPosition;
+
+        this.accessory.context.blindPosition = this.targetPosition = this.currentPosition = updatedPosition;
 
         blindsService.getCharacteristic(Characteristic.CurrentPosition).updateValue(this.currentPosition);
         blindsService.getCharacteristic(Characteristic.TargetPosition).updateValue(this.targetPosition);
+
       }
     }
   }
@@ -412,9 +373,7 @@ export class Blind {
   }
 
   // Move a blind in HomeKit.
-  private moveBlind(blindsService: Service, timeLeft: number, finalPosition: number, increment: number): void {
-
-    const Characteristic = this.hap.Characteristic;
+  private moveBlind(blindsService: Service, finalPosition: CharacteristicValue, increment: CharacteristicValue): void {
 
     // Clear out the previous delay timer, if one is configured.
     clearTimeout(this.moveTimer);
@@ -423,53 +382,85 @@ export class Blind {
     this.moveTimer = setTimeout(() => {
 
       // Increment our position.
-      this.currentPosition += increment;
+      this.accessory.context.blindPosition = (this.currentPosition as number) += (increment as number);
 
-      // Bounds checking.
-      if((this.currentPosition <= 0) || (this.currentPosition >= 100)) {
-        timeLeft = 0;
-      }
+      // If we exceed our bounds or we're at our final position, we're done.
+      if((this.currentPosition <= 0) || (this.currentPosition >= 100) || (this.currentPosition === finalPosition)) {
 
-      // Reduce the time by a second. If we are under 0, we're done.
-      if(--timeLeft < 0) {
+        // Our final position is something other than completely open or completely closed.
+        if((this.currentPosition > 0) && (this.currentPosition < 100)) {
 
-        // We've executed all the commands - we're done.
-        this.currentPosition = finalPosition;
-        this.positionState = Characteristic.PositionState.STOPPED;
+          // Trigger the stop script, if we have one configured.
+          const newPosition = this.stopBlind();
 
-        blindsService.getCharacteristic(Characteristic.TargetPosition).updateValue(this.currentPosition);
-        blindsService.getCharacteristic(Characteristic.CurrentPosition).updateValue(this.currentPosition);
-        blindsService.getCharacteristic(Characteristic.PositionState).updateValue(this.positionState);
+          if(newPosition !== -1) {
+            finalPosition = newPosition;
+          }
+        }
+
+        // Update the final values and tell HomeKit we're done.
+        this.accessory.context.blindPosition = this.targetPosition = this.currentPosition = finalPosition;
+        this.positionState = this.hap.Characteristic.PositionState.STOPPED;
+
+        blindsService.getCharacteristic(this.hap.Characteristic.TargetPosition).updateValue(this.currentPosition);
+        blindsService.getCharacteristic(this.hap.Characteristic.CurrentPosition).updateValue(this.currentPosition);
+        blindsService.getCharacteristic(this.hap.Characteristic.PositionState).updateValue(this.positionState);
 
         // We're done moving.
         this.isMoving = false;
-        this.isStopped = false;
 
-        this.accessory.getService(this.hap.Service.Switch)?.getCharacteristic(Characteristic.On).updateValue(this.isStopped);
         return;
       }
 
-      // We're still moving. Update our current position, and let it go around.
-      blindsService.getCharacteristic(Characteristic.CurrentPosition).updateValue(this.currentPosition);
-      this.moveBlind(blindsService, timeLeft, finalPosition, increment);
-    }, 1000);
+      // We're still moving. Update our current position, and let's keep moving.
+      blindsService.getCharacteristic(this.hap.Characteristic.CurrentPosition).updateValue(this.currentPosition);
+      this.moveBlind(blindsService, finalPosition, increment);
+
+    }, this.moveInterval);
 
   }
 
-  // Execute a command, with error handling.
-  private async execCommand(command: string): Promise<number> {
-    try {
-      const { stdout } = await execa.command(command, { shell: true });
-      return parseInt(stdout);
-    } catch(error) {
+  // Stop a blind in HomeKit.
+  private stopBlind(): number {
 
-      if(!(error instanceof Error)) {
-        this.log("Unknown error received while attempting to execute command %s: %s.", command, error);
+    // Only execute if we've configured a stop command.
+    if(!this.cmd.stop) {
+      return -1;
+    }
+
+    // Execute and return.
+    return this.execCommand(this.cmd.stop + " " + this.currentPosition.toString());
+  }
+
+  // Execute a command, with error handling.
+  private execCommand(command: string): number {
+    try {
+
+      // We only want the stdout property from the return of execa.command.
+      const { stdout } = execa.commandSync(command, { shell: true });
+
+      // Parse the return value.
+      const returnValue = parseInt(stdout);
+
+      // Validate the return value.
+      if(isNaN(returnValue) || (returnValue < 0) || (returnValue > 100)) {
+        this.log.error("Invalid value returned when executing command %s: %s. A numeric value between 0 and 100 is expected.", command, returnValue);
         return -1;
       }
 
-      this.log("Error executing the command: %s.", error.message);
+      // Return the value.
+      return returnValue;
+
+    } catch(error) {
+
+      if(!(error instanceof Error)) {
+        this.log.error("Unknown error received while attempting to execute command %s: %s.", command, error);
+        return -1;
+      }
+
+      this.log.error("Error executing the command: %s.", error.message);
       return -1;
+
     }
   }
 }

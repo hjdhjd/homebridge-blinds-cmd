@@ -62,14 +62,15 @@ my $COMMAND = shift or die $USAGE;
 # See if we need to repeat this command a few times to ensure the signal gets through, or if
 # we specified the position we want to move to, or both.
 #
-my $OPTIONREPEAT = shift;
-my $OPTIONPOSITION = shift;
+my $OPTIONONE = shift;
+my $OPTIONTWO = shift;
 my $POSITION;
 my $REPEAT;
 
-if(defined($OPTIONREPEAT)) {
-  $REPEAT = $REPEATCOUNT if $OPTIONREPEAT =~ /^repeat$/i;
-  $POSITION = int($OPTIONREPEAT) if $OPTIONREPEAT =~ /^[0-9]+$/;
+# The first option can be either repeat or a position value.
+if(defined($OPTIONONE)) {
+  $REPEAT = $REPEATCOUNT if $OPTIONONE =~ /^repeat$/i;
+  $POSITION = int($OPTIONONE) if $OPTIONONE =~ /^[0-9]+$/;
 
   die $USAGE unless defined($POSITION) || defined($REPEAT);
 }
@@ -77,9 +78,9 @@ if(defined($OPTIONREPEAT)) {
 # We specified a position, rather than a repeat above.
 $REPEAT = 1 if !defined($REPEAT);
 
-# Explicit position specified - make sure it's a valid value.
-$POSITION = int($OPTIONPOSITION) if(defined($OPTIONPOSITION) && $OPTIONPOSITION =~ /^[0-9]+$/);
-die $USAGE if(defined($OPTIONPOSITION) && !defined($POSITION));
+# The second option, if one is given, can only be a position - make sure it's a valid value.
+$POSITION = int($OPTIONTWO) if(defined($OPTIONTWO) && $OPTIONTWO =~ /^[0-9]+$/);
+die $USAGE if(defined($OPTIONTWO) && !defined($POSITION));
 
 $POSITION = 0 if(defined($POSITION) && ($POSITION < 0));
 $POSITION = 100 if(defined($POSITION) && ($POSITION > 100));
@@ -88,7 +89,7 @@ $POSITION = 100 if(defined($POSITION) && ($POSITION > 100));
 switch($COMMAND) {
   case /^(up|open)$/      { my $returnValue = moveShade($SHADE, "Open"); print $returnValue . "\n" unless $returnValue == -1; }
   case /^(down|close)$/   { my $returnValue = moveShade($SHADE, "Close"); print $returnValue . "\n" unless $returnValue == -1; }
-  case /^(stop|hold)$/    { my $returnValue = moveShade($SHADE, "Hold"); }
+  case /^(stop|hold)$/    { my $returnValue = moveShade($SHADE, "Hold"); print $returnValue . "\n" unless $returnValue == -1; }
   case "status"           { my $returnValue = getStatus($SHADE); print $returnValue . "\n" unless $returnValue == -1; }
   else                    { die $USAGE}
 }
@@ -100,6 +101,17 @@ sub getStatus {
 
   # Only argument we accept is which shade to get the status for.
   my $shadeTarget = shift @_;
+
+  # If we've been passed a current status from HomeKit and it's not fully open or closed,
+  # assume HomeKit is correct and return that position as our status. This may not be
+  # the right answer for every user's needs, but it's the right answer for many. The
+  # reason being that Somfy (and Bond for that matter) don't provide any sense of actual
+  # position - just a binary condition of open or closed for a given shade. If we're being
+  # asked to report back status, and HomeKit thinks the right status is something other
+  # than fully open or fully closed, then we're going to assume HomeKit has it right and
+  # is tracking blind position by estimating the transition time between fully open and
+  # fully closed.
+  return $POSITION if defined($POSITION) && ($POSITION > 0) && ($POSITION < 100);
 
   # Create the request.
   #
@@ -117,12 +129,16 @@ sub getStatus {
   # Receive the response and check to see if there is an issue.
   #
   if($response->is_success) {
+
     # Bond returns 1 on open, 0 on closed. Translate that to a position for HomeKit by
     # multiplying by 100.
     return $reply->{open} * 100;
+
   } else {
+
     print "Command failed: " . $response->status_line . "\n" unless $response->is_success;
     return -1;
+
   }
 }
 
@@ -135,6 +151,10 @@ sub moveShade {
   my $shadeTarget = shift @_;
   my $moveDirection = shift @_;
   my $moveResult = 0;
+
+  # Set the position bias, if Homebridge hasn't handed us what it thinks it is.
+  $POSITION = 0 if !defined($POSITION) && $moveDirection eq "Close";
+  $POSITION = 100 unless defined($POSITION);
 
   # Repeat the command as many times as requested, and only once otherwise.
   for(; $REPEAT > 0; $REPEAT--) {
@@ -214,6 +234,6 @@ sub moveShade {
   # Return -1 on error.
   return -1 unless $moveResult;
 
-  return 100 if (($moveDirection eq "Open") || ($moveDirection eq "Hold"));
-  return 0 if $moveDirection eq "Close";
+  # Return our final position.
+  return $POSITION;
 }

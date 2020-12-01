@@ -64,8 +64,8 @@
               "required": false,
               "minimum": 0,
               "maximum": 120,
-              "placeholder": "e.g. 30",
-              "description": "Duration, in seconds, of an open or close event used to simulate action progress in HomeKit. Default: 0 (disabled)."
+              "placeholder": "e.g. 12.5",
+              "description": "Duration, in seconds, of an open or close event used to simulate action progress in HomeKit. Default: 10.0."
             },
 
             "refreshRate": {

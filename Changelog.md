@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file. This project uses [semantic versioning](https://semver.org/).
 
+## 3.1.0 (2020-11-30)
+  * New feature: fine-grain control over position. If you have a stop command configured and you have a transition interval defined, `homebridge-blinds-cmd` will now intelligently estimate where the blinds should be and reflect that value in HomeKit, as well as time stop commands to get to the appropriate position. What this means is that if you want to be able to "set blinds to 60%" you can now do that even if your blinds (e.g. Somfy) don't natively support this capability. To make this work you need to define the transition interval for your blinds (i.e. how long does it take to fully open or close the blind) and have a stop command configured for the blind. You also need to ensure your status scripts / commands are updated to reflect positions. See [somfy-bond.pl](https://github.com/hjdhjd/homebridge-blinds-cmd/blob/master/scripts/somfy-bond.pl) for a detailed example of how to implement this in practice.
+  * Removed: support for a stop switch. You can use position control to stop the blind at any location, assuming you have the transition interval set and a stop command configured.
+
 ## 3.0.6 (2020-11-22)
   * Dependency updates.
 

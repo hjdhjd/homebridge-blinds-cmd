@@ -38,7 +38,7 @@ sudo npm install -g homebridge-blinds-cmd
 ```
 
 ## Configuration
-I would strongly recommend using the [Homebridge Config UI](https://github.com/oznu/homebridge-config-ui-x) rather than editing your config.json directly. It does a good job of showing you all the options and always generating a valid configuration so you don't get stuck on typos or looking for stray commas in your `config.json`.
+I strongly recommend using the [Homebridge Config UI](https://github.com/oznu/homebridge-config-ui-x) rather than editing your config.json directly. It does a good job of showing you all the options and always generating a valid configuration so you don't get stuck on typos or looking for stray commas in your `config.json`.
 
 For those that prefer configuring things directly, add the accessory in `config.json` in your home directory inside `.homebridge`.
 
@@ -57,7 +57,7 @@ For those that prefer configuring things directly, add the accessory in `config.
            "down": "/path/to/your/lower_blinds_script",
            "status": "/path/to/your/blinds_state_script",
            "stop": "/path/to/your/stop_blinds_script",
-           "transitionInterval": 30,
+           "transitionInterval": 10,
            "refreshRate": 5
          }
       ]
@@ -67,9 +67,9 @@ For those that prefer configuring things directly, add the accessory in `config.
 
 ### Options
 * `up`, `down`, `stop`, and `status` should point to scripts or command lines to run to execute those actions. `up` and `down` are required, and all others are optional.
-* Setting a `stop` command will create an additional switch that you can use to stop the blind when it is moving. Unfortunately, HomeKit doesn't allow for the concept of stopping a blind while it is moving - your choices are to open or close. To workaround this limitation, a switch service is added to the blind that allows you to stop the blind when it's moving.
+* Setting a `stop` command in conjunction with a `transitionInterval` will allow you to simulate partially opening or closing your blinds, enabling scenarios such as asking HomeKit to open the blind to a certain percentage (e.g. Hey Siri, set the blinds to 30%).
 * `manufacturer`, `model`, and `serial` are optional settings to allow you to further identify your blinds in HomeKit.
-* `transitionInterval` is an optional setting that allows you to simulate a blind transition movement between open and closed. If it takes 10 seconds for the blinds to open, enter `10` here and `homebridge-blinds-cmd` will simulate the time it takes to complete that transition in HomeKit.
+* `transitionInterval` is an optional setting that allows you to simulate a blind transition movement between open and closed. If it takes 15 seconds for the blinds to open, enter `15` here and `homebridge-blinds-cmd` will simulate the time it takes to complete that transition in HomeKit. The default is 10 seconds.
 * `refreshRate` will execute the `status` command at whatever refresh rate you set, in seconds. This is useful when the state of your blinds changes outside of HomeKit, and you want to regularly check it's status.
 
 ### Script inputs and outputs
@@ -87,13 +87,25 @@ For those that prefer configuring things directly, add the accessory in `config.
       }
     ```
 
-  The above configured script will be called as <CODE>/path/to/raise_blinds_script <I>100</I></CODE>, where 100 is whatever value was requested by the end user and passed on to HomeKit. This should enable those who wish to take advantage of situations where you may want to only open a shade half way, to do so. Finally, the script should output a number from 0 to 100 to inform HomeKit of what the new position of the blind is.
+  All configured scripts (`up`, `down`, `stop`, and `status`) will be called as <CODE>/path/to/raise_blinds_script <I>100</I></CODE>, where 100 is whatever position was requested by the end user and passed on to HomeKit. This should enable those who wish to take advantage of situations where you may want to only open a shade half way, to do so. The script should output a number from 0 to 100 to inform HomeKit of what the new position of the blind is.
+
+  In the case of the `status` script, the value specified by `homebridge-blinds-cmd` represents the position that the plugin believes the blind is at. For example, if `homebridge-blinds-cmd` believes the blind is 30% open, it will check for status by executing `/path/to/status_script 30`. If you believe the number specified by the plugin is correct, you should return the same value: 30 in this case. Whatever value is returned by the status script is what HomeKit will ultimately report.
 
 There are two example scripts to get you started in the <A HREF="https://github.com/hjdhjd/homebridge-blinds-cmd/tree/master/scripts">scripts</A> folder. They should help you get started whether you're using a Somfy URTSI or a Bond Bridge to control your shades.
 
 ## Notes
 This plugin doesn't query nor have direct knowledge of the actual position of your blinds. Instead, it emulates the position based on your most recent request to raise / lower the blinds (i.e. it remembers what you last asked it to do and reports that back to HomeKit). Some blinds, such as Somfy, don't support querying their specific state. That said, if you do wish to use a specific position, you can do so. It's passed as the last argument to the up and down script configuration options. How you choose to handle it, is up to you. What your plugin should output is the position it wants to HomeKit (e.g. 100 if the blind is fully open).
 
+Additionally, if you specify `transitionInterval` and `stop` you'll magically get the ability to move the blind a precise amount. For instance, if you try to open the blind to 20%, `homebridge-blinds-cmd` will run the `up` script and then use `transitionInterval` to figure out how many seconds to allow the blinds to move before running the `stop` script. The result, if you have `transitionInterval` correctly calculated for your blinds, should be relatively precise placement of your blinds at home - something that many popular blinds (e.g. Somfy), can't do natively! The [sample control script](https://github.com/hjdhjd/homebridge-blinds-cmd/blob/master/scripts/somfy-bond.pl) for Bond provides a good example of how to do this.
+
 A sample control script for Somfy is included. This script is provided as an example of what is possible. Your mileage may vary - this script was tested on a Mac and should work on other platforms, best of luck. It assumes the use of a [Somfy URTSI](https://www.somfysystems.com/products/1810872/universal-rts-interface) attached to an [iTach Flex](https://www.globalcache.com/products/flex/)) via serial. The script is fairly robust and allows for multiple URTSI scenarios including multiple URTSIs and shade groups.
 
-I've also used, and am using, a [Bond Bridge](https://www.bondhome.io). It's a terrific device with builtin support for Somfy RF signals as well as a wide variety of IR and RF formats for shades, ceiling fans, and fireplaces. I highly recommend it as a more robust alternative to the Somfy URTSI, and at a much better price point.
+I've also used, and currently use, a [Bond Bridge](https://www.bondhome.io). It's a terrific device with builtin support for Somfy RF signals as well as a wide variety of IR and RF formats for shades, ceiling fans, and fireplaces. I highly recommend it as a more robust alternative to the Somfy URTSI, and at a much better price point.
+
+## Plugin Development Dashboard
+This is mostly of interest to the true developer nerds amongst us.
+
+[![License](https://img.shields.io/npm/l/homebridge-blinds-cmd?color=%230559C9&logo=open%20source%20initiative&logoColor=%23FFFFFF&style=for-the-badge)](https://github.com/hjdhjd/homebridge-blinds-cmd/blob/master/LICENSE.md)
+[![Build Status](https://img.shields.io/github/workflow/status/hjdhjd/homebridge-blinds-cmd/Continuous%20Integration?color=%230559C9&logo=github-actions&logoColor=%23FFFFFF&style=for-the-badge)](https://github.com/hjdhjd/homebridge-blinds-cmd/actions?query=workflow%3A%22Continuous+Integration%22)
+[![Dependencies](https://img.shields.io/librariesio/release/npm/homebridge-blinds-cmd?color=%230559C9&logo=dependabot&style=for-the-badge)](https://libraries.io/npm/homebridge-blinds-cmd)
+[![GitHub commits since latest release (by SemVer)](https://img.shields.io/github/commits-since/hjdhjd/homebridge-blinds-cmd/latest?color=%230559C9&logo=github&sort=semver&style=for-the-badge)](https://github.com/hjdhjd/homebridge-blinds-cmd/commits/master)

@@ -272,8 +272,10 @@ export class Blind {
       return;
     }
 
-    // We're already where we want to be, do nothing.
-    if(value === this.currentPosition) {
+    // We're already where we want to be, do nothing. If we don't have a status command then
+    // we might not know about a manual input to the blind, so send the control even if we think
+    // we're already there.
+    if(this.cmd.status && value === this.currentPosition) {
       this.targetPosition = value;
       this.positionState = Characteristic.PositionState.STOPPED;
 
